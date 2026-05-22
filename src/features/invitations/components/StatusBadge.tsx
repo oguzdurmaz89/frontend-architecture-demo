@@ -1,8 +1,8 @@
-import { Badge } from "@/components/ui/index";
+import { Badge } from "@/components/ui";
 import {
   STATUS_BADGE_TONES,
   type StatusBadgeProps,
-} from "@/features/invitations/invitationManagement.shared";
+} from "@/features/invitations/invitationManagement.shared.ts";
 
 export const StatusBadge = ({ status }: StatusBadgeProps) => {
   return <Badge tone={STATUS_BADGE_TONES[status]}>{status}</Badge>;
