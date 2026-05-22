@@ -1,4 +1,8 @@
-import type { CreateInvitationInput, Invitation, UpdateInvitationInput } from "@/domain/invitation";
+import type {
+  CreateInvitationInput,
+  Invitation,
+  UpdateInvitationInput,
+} from "@/domain/invitation";
 import { ApiError } from "@/api/errors";
 import { mockInvitations } from "@/api/mockInvitations";
 
