@@ -1,42 +1,32 @@
 # Frontend Architecture Demo
 
-A small React + TypeScript admin application for managing user access invitations.
+A compact React + TypeScript admin application for managing user access invitations.
 
-The project is intentionally compact, but it is structured like a real frontend feature: typed domain models, a service
-boundary, feature hooks, reusable UI primitives, role-aware behavior, accessible table patterns, and automated test
-coverage.
+The project is intentionally small, but it is structured like a real frontend feature: typed domain models, a service
+boundary, feature hooks, reusable UI primitives, role-aware behavior, and automated test coverage.
 
 ## What the Application Does
 
-The application has two demo roles:
+The app supports two demo roles.
 
-### Admin
-
-An admin can:
+**Admin users can:**
 
 - View invitations
 - Search invitations by name or email
 - Filter invitations by status
-- Navigate paginated invitation results
+- Navigate paginated results
 - Create a new invitation
 - Edit an existing invitation
 - Delete an invitation after confirmation
 
-### Viewer
-
-A viewer can:
+**Viewer users can:**
 
 - View the invitation list in read-only mode
 - Search, filter, and paginate the list
 - See a read-only information message
 
-A viewer cannot:
-
-- See the create invitation form
-- See edit actions
-- See delete actions
-
-This models a more realistic permission split between reading data and mutating data.
+Viewer users cannot see the create form or row-level edit/delete actions. This keeps read access and mutation access
+separate, which is closer to how real admin tools usually behave.
 
 ## Tech Stack
 
@@ -50,32 +40,11 @@ This models a more realistic permission split between reading data and mutating 
 
 ## Getting Started
 
-### Prerequisites
-
 This project uses Node.js `22.12.0`.
-
-If you use `nvm`, run:
 
 ```bash
 nvm use
-```
-
-If the correct version is not installed yet:
-
-```bash
-nvm install 22.12.0
-nvm use 22.12.0
-```
-
-### Install Dependencies
-
-```bash
 npm install
-```
-
-### Run the Development Server
-
-```bash
 npm run dev
 ```
 
@@ -85,73 +54,16 @@ Then open the local URL shown in the terminal. With Vite, this is usually:
 http://localhost:5173
 ```
 
-## Available Scripts
+## Useful Scripts
 
 ```bash
 npm run dev
-```
-
-Starts the Vite development server.
-
-```bash
-npm run build
-```
-
-Runs TypeScript build checks and creates a production build.
-
-```bash
 npm run lint
-```
-
-Runs ESLint.
-
-```bash
-npm run preview
-```
-
-Previews the production build locally.
-
-```bash
+npm run build
 npm run test:unit
-```
-
-Runs unit tests with Vitest.
-
-```bash
-npm run test:unit:watch
-```
-
-Runs Vitest in watch mode.
-
-```bash
 npm run test:e2e
-```
-
-Runs end-to-end tests with Playwright.
-
-```bash
-npm run test:e2e:ui
-```
-
-Runs Playwright in UI mode.
-
-```bash
-npm run test:e2e:headed
-```
-
-Runs Playwright tests in headed browser mode.
-
-```bash
-npm run test:e2e:report
-```
-
-Opens the Playwright HTML report.
-
-```bash
 npm run test:all
 ```
-
-Runs unit tests and end-to-end tests.
 
 ## Project Structure
 
@@ -165,9 +77,6 @@ src/
 
   auth/
     accessControl.ts
-
-  boundaries/
-    guardInvitationManagementAccess.ts
 
   components/ui/
     Alert.tsx
@@ -193,8 +102,8 @@ src/
 
     components/
       CreateInvitationForm.tsx
-      EditInvitationDialog.tsx
       DeleteInvitationDialog.tsx
+      EditInvitationDialog.tsx
       InvitationFilters.tsx
       InvitationHeader.tsx
       InvitationListSection.tsx
@@ -206,9 +115,9 @@ src/
 
     hooks/
       useCreateInvitationMutation.ts
-      useUpdateInvitationMutation.ts
       useDeleteInvitationMutation.ts
       useInvitationListState.ts
+      useUpdateInvitationMutation.ts
 
   test/
     setup.ts
@@ -219,13 +128,11 @@ e2e/
 
 ## Architecture Overview
 
-The application is split into clear areas of responsibility.
-
 ### Domain Layer
 
-The invitation domain is defined in `src/domain/invitation.ts`.
+The invitation model lives in `src/domain/invitation.ts`.
 
-Core types:
+Core types include:
 
 - `Invitation`
 - `InvitationRole`
@@ -250,29 +157,15 @@ The current implementation uses an in-memory mocked data source. The UI and feat
 directly. This keeps the data boundary explicit and makes it easier to replace the mocked implementation with real HTTP
 calls later.
 
-The service layer also handles business rules such as:
-
-- Normalizing email addresses before storing or comparing them
-- Preventing duplicate email addresses
-- Returning typed `ApiError` failures for duplicate emails and missing invitations
-- Creating default invitation metadata such as `id`, `createdAt`, and initial `pending` status
+The service layer also owns business rules such as email normalization, duplicate email checks, missing invitation
+errors, and default invitation metadata.
 
 ### Feature State
 
 The invitation list state is handled by `useInvitationList`.
 
-It owns:
-
-- Initial data loading
-- Loading state
-- Error state
-- Search query
-- Status filter
-- Pagination
-- Adding newly created invitations to the list
-- Updating edited invitations in the list
-- Removing deleted invitations from the list
-- Refreshing the invitation list from the service layer
+It owns loading state, error state, search, status filtering, pagination, refresh, and local list updates after create,
+edit, and delete operations.
 
 This keeps list behavior separate from rendering components.
 
@@ -284,100 +177,33 @@ Create, update, and delete operations each have their own mutation hook:
 - `useUpdateInvitationMutation`
 - `useDeleteInvitationMutation`
 
-Each hook models the mutation lifecycle explicitly with a discriminated union:
+Each hook models the mutation lifecycle with a discriminated union:
 
 - `idle`
 - `submitting`
 - `success`
 - `error`
 
-This avoids ambiguous combinations like loading and error being true at the same time, keeps submitted context
-available, and makes UI states easier to reason about.
+This avoids ambiguous state combinations and keeps submitted context available for the UI.
 
 ### Role-Aware UI Behavior
-
-The UI supports two demo roles: `admin` and `viewer`.
 
 Role behavior is intentionally simple:
 
 - Admins can create, edit, and delete invitations.
 - Viewers can read the invitation list but cannot mutate it.
 - The create form and row-level actions are not rendered for viewers.
-- Viewers receive a read-only information message.
 
-This is not a full authentication or authorization system. It models how the frontend can react to access decisions. In
-a production system, authorization would still need to be enforced by the backend.
+This is not a full authentication system. It models how the frontend reacts to access decisions. In production,
+authorization would still need to be enforced by the backend.
 
 ### UI Foundation
 
-The project includes a small reusable UI layer in `src/components/ui`.
+The project includes a small reusable UI layer in `src/components/ui` for generic components such as buttons, form
+fields, alerts, cards, dialogs, and the data grid.
 
-Reusable primitives include:
-
-- `Button`
-- `IconButton`
-- `TextField`
-- `SelectField`
-- `Alert`
-- `Badge`
-- `Card`
-- `FormCard`
-- `Dialog`
-- `DataGrid`
-
-Domain-specific components remain inside the invitation feature. For example, `StatusBadge` lives under
+Domain-specific UI remains inside the invitation feature. For example, `StatusBadge` lives under
 `features/invitations/components` because it depends on invitation statuses and invitation-specific badge tones.
-
-## Accessibility and UX Decisions
-
-### Semantic Table
-
-The invitation list uses a semantic HTML table through `DataGrid`.
-
-The table uses native table elements:
-
-- `table`
-- `thead`
-- `tbody`
-- `tr`
-- `th`
-- `td`
-
-This is intentional because invitations are tabular data. Native table semantics give screen readers clearer
-relationships between rows, columns, and headers than a div-based table simulation.
-
-### Sticky Actions Column
-
-Admin actions are placed in a sticky left column.
-
-This keeps edit and delete actions available while the table scrolls horizontally on smaller screens. The tradeoff is a
-little more table styling, but it improves usability without giving up semantic table structure.
-
-### Accessible Action Buttons
-
-Row actions use `IconButton` with explicit `aria-label` values such as:
-
-```text
-Edit invitation for Jane Doe
-Delete invitation for Jane Doe
-```
-
-The visible UI can stay compact while the accessible name remains clear.
-
-### Dialogs
-
-Edit and delete flows use a shared `Dialog` shell.
-
-The dialog provides:
-
-- `role="dialog"`
-- `aria-modal="true"`
-- labelled title
-- optional description
-- close button
-- Escape key close behavior
-
-The edit and delete content remains feature-specific, while the dialog shell remains reusable.
 
 ## Validation
 
@@ -401,9 +227,7 @@ The project uses both unit tests and end-to-end tests.
 
 ### Unit Tests
 
-Unit tests are written with Vitest.
-
-Covered areas:
+Unit tests are written with Vitest and cover:
 
 - Create invitation validation
 - Update invitation validation
@@ -424,18 +248,14 @@ src/features/invitations/invitationManagement.shared.test.ts
 
 ### End-to-End Tests
 
-End-to-end tests are written with Playwright.
-
-Covered flows:
+End-to-end tests are written with Playwright and cover:
 
 - Admin can create, edit, and delete an invitation
 - Delete requires confirmation
 - Viewer can read invitations
 - Viewer cannot see create, edit, or delete actions
 
-The tests use user-facing accessible selectors and scoped assertions. For example, table data is asserted within the
-`Invitations` table, and dialog fields are asserted inside the active dialog. This keeps the tests closer to user
-behavior and avoids brittle implementation selectors.
+The tests use user-facing accessible selectors and scoped assertions instead of implementation-specific selectors.
 
 E2E tests live in:
 
@@ -450,8 +270,8 @@ e2e/invitation-management.spec.ts
 The UI does not directly own data operations. Fetching, creating, updating, and deleting invitations are handled through
 a typed service layer.
 
-The alternative would be to keep data manipulation inside components or hooks. That would be simpler at first, but
-harder to replace with a real API later.
+The alternative would be to keep data manipulation inside components or hooks. That is simpler at first, but harder to
+replace with a real API later.
 
 ### Explicit Mutation State
 
@@ -460,39 +280,20 @@ Each mutation flow has an explicit lifecycle state.
 The alternative would be separate booleans such as `isLoading`, `error`, and `success`. That can create invalid
 combinations. A discriminated union keeps the state model safer and easier to understand.
 
-### Feature-Specific Status Badge
-
-`StatusBadge` is kept inside the invitations feature instead of the generic UI layer.
-
-The reason is that it understands invitation statuses and invitation-specific badge tones. It is not a generic badge
-primitive.
-
-### Semantic Data Grid
-
-The table is implemented with semantic HTML because the data is tabular.
-
-A div-based grid can offer layout flexibility, but a native table is more appropriate here for accessibility and data
-relationships.
-
 ### Read-Only Viewer Experience
 
 Viewer access is read-only instead of fully blocked.
 
-In many real products, viewing data and mutating data are separate permissions. This makes the demo behavior closer to a
+In many real products, viewing data and mutating data are separate permissions. This makes the behavior closer to a
 realistic admin interface.
 
 ### Separate Create, Update, and Delete Hooks
 
 Create, update, and delete each have their own mutation hook.
 
-The flows are similar, but not identical:
-
-- Create owns new form data and returns a new invitation.
-- Update owns pre-filled form data and returns an updated invitation.
-- Delete owns a destructive confirmation flow and returns the deleted invitation id.
-
-A generic mutation abstraction could be introduced later if the repetition grew, but explicit hooks are easier to read
-at this size.
+The flows are similar, but not identical. Create owns new form data, update owns pre-filled form data, and delete owns a
+destructive confirmation flow. A generic mutation abstraction could be introduced later if the repetition grew, but
+explicit hooks are easier to read at this size.
 
 ## Tradeoffs
 
@@ -523,8 +324,6 @@ If this were moved toward production, the next improvements would be:
 
 ## Quality Checklist
 
-Before pushing changes, run:
-
 ```bash
 npm run lint
 npm run build
@@ -540,7 +339,6 @@ This project demonstrates a compact but complete frontend feature with clear bou
 - Service-layer data operations
 - Explicit async mutation state
 - Role-aware UI behavior
-- Semantic and accessible table structure
 - Reusable UI primitives
 - Feature-specific components where appropriate
 - Unit and E2E test coverage

@@ -1,7 +1,7 @@
-export type UserRole = "admin" | "viewer";
+export const USER_ROLES = ["admin", "viewer"] as const;
 
-export const USER_ROLES: UserRole[] = ["admin", "viewer"];
+export type UserRole = (typeof USER_ROLES)[number];
 
 export const canManageInvitations = (role: UserRole): boolean => {
-  return role === "admin";
+    return role === "admin";
 };
