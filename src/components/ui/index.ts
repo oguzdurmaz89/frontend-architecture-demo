@@ -6,5 +6,8 @@ export { DataGrid } from "./DataGrid";
 export { FormCard } from "./FormCard";
 export { SelectField } from "./SelectField";
 export { TextField } from "./TextField";
+export { EditIcon } from "./EditIcon";
+export { DeleteIcon } from "./DeleteIcon";
+export { IconButton } from "./IconButton";
 
 export type { BadgeTone, DataGridColumn, SelectOption } from "./ui.shared";

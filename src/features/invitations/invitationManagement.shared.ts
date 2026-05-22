@@ -96,10 +96,14 @@ export type InvitationFiltersProps = {
 
 export type InvitationListSectionProps = {
   invitationList: InvitationListState;
+  canManageInvitations: boolean;
 };
 
 export type InvitationsTableProps = {
   invitations: Invitation[];
+  canManageInvitations: boolean;
+  onEditInvitation: (invitation: Invitation) => void;
+  onDeleteInvitation: (invitation: Invitation) => void;
 };
 
 export type StatusBadgeProps = {

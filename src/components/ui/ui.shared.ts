@@ -5,6 +5,8 @@ export type DataGridColumn<TRow> = {
   id: string;
   header: string;
   renderCell: (row: TRow) => ReactNode;
+  width?: string;
+  isSticky?: boolean;
 };
 
 export type SelectOption<TValue extends string = string> = {
