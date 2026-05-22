@@ -1,13 +1,42 @@
 # Frontend Architecture Demo
 
-A small standalone admin-facing web application for managing user access invitations.
+A small React + TypeScript admin application for managing user access invitations.
 
-This project is designed as a discussion-friendly frontend architecture demo. It focuses on TypeScript modelling, typed
-client/data boundaries, async mutation state, list state management, validation feedback, role-based UI behavior,
-accessibility, testing, and production tradeoffs.
+The project is intentionally compact, but it is structured like a real frontend feature: typed domain models, a service
+boundary, feature hooks, reusable UI primitives, role-aware behavior, accessible table patterns, and automated test
+coverage.
 
-The goal is to provide a compact project that can be reviewed and discussed clearly without relying on confidential
-production code.
+## What the Application Does
+
+The application has two demo roles:
+
+### Admin
+
+An admin can:
+
+- View invitations
+- Search invitations by name or email
+- Filter invitations by status
+- Navigate paginated invitation results
+- Create a new invitation
+- Edit an existing invitation
+- Delete an invitation after confirmation
+
+### Viewer
+
+A viewer can:
+
+- View the invitation list in read-only mode
+- Search, filter, and paginate the list
+- See a read-only information message
+
+A viewer cannot:
+
+- See the create invitation form
+- See edit actions
+- See delete actions
+
+This models a more realistic permission split between reading data and mutating data.
 
 ## Tech Stack
 
@@ -15,6 +44,8 @@ production code.
 - TypeScript
 - Vite
 - Tailwind CSS
+- Vitest
+- Playwright
 - In-memory mocked data source
 
 ## Getting Started
@@ -36,13 +67,13 @@ nvm install 22.12.0
 nvm use 22.12.0
 ```
 
-### Install dependencies
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Run the development server
+### Run the Development Server
 
 ```bash
 npm run dev
@@ -54,316 +85,305 @@ Then open the local URL shown in the terminal. With Vite, this is usually:
 http://localhost:5173
 ```
 
-### Run linting
+## Available Scripts
 
 ```bash
-npm run lint
+npm run dev
 ```
 
-### Create a production build
+Starts the Vite development server.
 
 ```bash
 npm run build
 ```
 
-### Preview the production build
+Runs TypeScript build checks and creates a production build.
+
+```bash
+npm run lint
+```
+
+Runs ESLint.
 
 ```bash
 npm run preview
 ```
 
-## Project Overview
+Previews the production build locally.
 
-The application allows an admin user to:
+```bash
+npm run test:unit
+```
 
-- View existing invitations
-- Search invitations by name or email
-- Filter invitations by status
-- Navigate invitations with pagination
-- Create a new invitation
-- See loading, success, validation, and request failure feedback
-- Switch between `admin` and `viewer` roles to verify role-based behavior
+Runs unit tests with Vitest.
 
-The UI is intentionally simple. The goal is to demonstrate correct behavior, maintainable structure, typed boundaries,
-accessibility, and clear async state handling rather than building a production-polished interface.
+```bash
+npm run test:unit:watch
+```
 
-## Architecture Overview
+Runs Vitest in watch mode.
 
-The project is split into small areas of responsibility:
+```bash
+npm run test:e2e
+```
+
+Runs end-to-end tests with Playwright.
+
+```bash
+npm run test:e2e:ui
+```
+
+Runs Playwright in UI mode.
+
+```bash
+npm run test:e2e:headed
+```
+
+Runs Playwright tests in headed browser mode.
+
+```bash
+npm run test:e2e:report
+```
+
+Opens the Playwright HTML report.
+
+```bash
+npm run test:all
+```
+
+Runs unit tests and end-to-end tests.
+
+## Project Structure
 
 ```text
 src/
-  api/                         Mocked service layer and API errors
-  auth/                        Role and permission helpers
-  boundaries/                  Application boundary / access guard
-  components/ui/               Small reusable UI primitives
-  domain/                      Invitation domain types
-  features/invitations/        Invitation-specific hooks, components, and shared helpers
+  api/
+    errors.ts
+    invitationService.ts
+    invitationService.test.ts
+    mockInvitations.ts
+
+  auth/
+    accessControl.ts
+
+  boundaries/
+    guardInvitationManagementAccess.ts
+
+  components/ui/
+    Alert.tsx
+    Badge.tsx
+    Button.tsx
+    Card.tsx
+    DataGrid.tsx
+    Dialog.tsx
+    FormCard.tsx
+    IconButton.tsx
+    SelectField.tsx
+    TextField.tsx
+    EditIcon.tsx
+    DeleteIcon.tsx
+    ui.shared.ts
+
+  domain/
+    invitation.ts
+
+  features/invitations/
+    invitationManagement.shared.ts
+    invitationManagement.shared.test.ts
+
+    components/
+      CreateInvitationForm.tsx
+      EditInvitationDialog.tsx
+      DeleteInvitationDialog.tsx
+      InvitationFilters.tsx
+      InvitationHeader.tsx
+      InvitationListSection.tsx
+      InvitationManagementPage.tsx
+      InvitationPagination.tsx
+      InvitationsTable.tsx
+      RoleSwitcher.tsx
+      StatusBadge.tsx
+
+    hooks/
+      useCreateInvitationMutation.ts
+      useUpdateInvitationMutation.ts
+      useDeleteInvitationMutation.ts
+      useInvitationListState.ts
+
+  test/
+    setup.ts
+
+e2e/
+  invitation-management.spec.ts
 ```
+
+## Architecture Overview
+
+The application is split into clear areas of responsibility.
 
 ### Domain Layer
 
-The invitation model is defined with TypeScript types in `src/domain/invitation.ts`.
+The invitation domain is defined in `src/domain/invitation.ts`.
 
-Core domain concepts:
+Core types:
 
 - `Invitation`
-- `InvitationStatus`
 - `InvitationRole`
+- `InvitationStatus`
 - `CreateInvitationInput`
+- `UpdateInvitationInput`
 
-These types are shared by the service layer, hooks, validation helpers, and UI components.
+These types are shared by the service layer, validation helpers, mutation hooks, and UI components.
 
-### API / Service Layer
+### Service Layer
 
-Invitation data operations are isolated behind a typed service layer in `src/api/invitationService.ts`.
+Invitation data operations are isolated in `src/api/invitationService.ts`.
 
-Implemented service functions:
+Implemented operations:
 
 - `fetchInvitations`
 - `createInvitation`
+- `updateInvitation`
+- `deleteInvitation`
 
-The current implementation uses an in-memory mocked data source from `src/api/mockInvitations.ts`. This keeps the
-project lightweight while still showing a clear boundary between UI logic and data operations.
+The current implementation uses an in-memory mocked data source. The UI and feature hooks do not access the mock data
+directly. This keeps the data boundary explicit and makes it easier to replace the mocked implementation with real HTTP
+calls later.
 
-If this became production code, the internals of the service functions could be replaced with real HTTP calls while
-keeping most of the UI and hook logic unchanged.
+The service layer also handles business rules such as:
 
-### Async Mutation Hook
+- Normalizing email addresses before storing or comparing them
+- Preventing duplicate email addresses
+- Returning typed `ApiError` failures for duplicate emails and missing invitations
+- Creating default invitation metadata such as `id`, `createdAt`, and initial `pending` status
 
-The create invitation flow is handled by `useCreateInvitationMutation`.
+### Feature State
 
-The hook exposes:
+The invitation list state is handled by `useInvitationList`.
 
-- `submission`
-- `handleSubmit`
-- `reset`
-- `isSubmitting`
+It owns:
 
-The mutation state is stored in `submission` and models:
+- Initial data loading
+- Loading state
+- Error state
+- Search query
+- Status filter
+- Pagination
+- Adding newly created invitations to the list
+- Updating edited invitations in the list
+- Removing deleted invitations from the list
+- Refreshing the invitation list from the service layer
+
+This keeps list behavior separate from rendering components.
+
+### Mutation Hooks
+
+Create, update, and delete operations each have their own mutation hook:
+
+- `useCreateInvitationMutation`
+- `useUpdateInvitationMutation`
+- `useDeleteInvitationMutation`
+
+Each hook models the mutation lifecycle explicitly with a discriminated union:
 
 - `idle`
 - `submitting`
 - `success`
 - `error`
 
-On success, the hook preserves the submitted input and the returned invitation.
+This avoids ambiguous combinations like loading and error being true at the same time, keeps submitted context
+available, and makes UI states easier to reason about.
 
-On failure, it preserves useful context such as the error message, error code, status code, error context, and submitted
-input.
+### Role-Aware UI Behavior
 
-### Invitation List State
+The UI supports two demo roles: `admin` and `viewer`.
 
-The invitation overview state is managed by `useInvitationList`.
+Role behavior is intentionally simple:
 
-It handles:
+- Admins can create, edit, and delete invitations.
+- Viewers can read the invitation list but cannot mutate it.
+- The create form and row-level actions are not rendered for viewers.
+- Viewers receive a read-only information message.
 
-- Loading invitations
-- Loading state
-- Error state
-- Search by name or email
-- Filtering by status
-- Pagination
-- Adding a newly created invitation to the list
-- Refreshing the invitation list
+This is not a full authentication or authorization system. It models how the frontend can react to access decisions. In
+a production system, authorization would still need to be enforced by the backend.
 
-This keeps list behavior separate from rendering components.
+### UI Foundation
 
-### Role-Based Access Boundary
+The project includes a small reusable UI layer in `src/components/ui`.
 
-A lightweight client-side guard represents role-based UI behavior.
+Reusable primitives include:
 
-Implemented boundary:
+- `Button`
+- `IconButton`
+- `TextField`
+- `SelectField`
+- `Alert`
+- `Badge`
+- `Card`
+- `FormCard`
+- `Dialog`
+- `DataGrid`
 
-```ts
-const guardInvitationManagementAccess: (
-    role: UserRole,
-) => InvitationManagementAccessResult;
+Domain-specific components remain inside the invitation feature. For example, `StatusBadge` lives under
+`features/invitations/components` because it depends on invitation statuses and invitation-specific badge tones.
+
+## Accessibility and UX Decisions
+
+### Semantic Table
+
+The invitation list uses a semantic HTML table through `DataGrid`.
+
+The table uses native table elements:
+
+- `table`
+- `thead`
+- `tbody`
+- `tr`
+- `th`
+- `td`
+
+This is intentional because invitations are tabular data. Native table semantics give screen readers clearer
+relationships between rows, columns, and headers than a div-based table simulation.
+
+### Sticky Actions Column
+
+Admin actions are placed in a sticky left column.
+
+This keeps edit and delete actions available while the table scrolls horizontally on smaller screens. The tradeoff is a
+little more table styling, but it improves usability without giving up semantic table structure.
+
+### Accessible Action Buttons
+
+Row actions use `IconButton` with explicit `aria-label` values such as:
+
+```text
+Edit invitation for Jane Doe
+Delete invitation for Jane Doe
 ```
 
-Current behavior:
+The visible UI can stay compact while the accessible name remains clear.
 
-- `admin` can access the invitation management view
-- `viewer` sees an access denied state
+### Dialogs
 
-This is intentionally not a production authentication system. It only represents how the UI reacts to access decisions.
+Edit and delete flows use a shared `Dialog` shell.
 
-## API / Interface Description
+The dialog provides:
 
-### `fetchInvitations`
+- `role="dialog"`
+- `aria-modal="true"`
+- labelled title
+- optional description
+- close button
+- Escape key close behavior
 
-Fetches the current list of invitations from the mocked data source.
+The edit and delete content remains feature-specific, while the dialog shell remains reusable.
 
-```ts
-const fetchInvitations: () => Promise<Invitation[]>;
-```
+## Validation
 
-#### Response Shape
+Validation helpers live in `features/invitations/invitationManagement.shared.ts`.
 
-```ts
-type Invitation = {
-    id: string;
-    name: string;
-    email: string;
-    locale: string;
-    role: "admin" | "clinician" | "coordinator";
-    status: "pending" | "accepted" | "expired" | "revoked";
-    createdAt: string;
-};
-```
-
-#### Example Response
-
-```ts
-[
-    {
-        id: "invitation-1",
-        name: "Anna Jensen",
-        email: "anna.jensen@example.com",
-        locale: "da-DK",
-        role: "clinician",
-        status: "pending",
-        createdAt: "2026-05-01T09:00:00.000Z"
-    }
-]
-```
-
-### `createInvitation`
-
-Creates a new invitation and adds it to the mocked data source.
-
-```ts
-const createInvitation: (
-    input: CreateInvitationInput,
-) => Promise<Invitation>;
-```
-
-#### Request Shape
-
-```ts
-type CreateInvitationInput = {
-    name: string;
-    email: string;
-    locale: string;
-    role: "admin" | "clinician" | "coordinator";
-};
-```
-
-#### Example Request
-
-```ts
-{
-    name: "Jane Doe",
-        email
-:
-    "jane.doe@example.com",
-        locale
-:
-    "en-US",
-        role
-:
-    "clinician"
-}
-```
-
-#### Example Response
-
-```ts
-{
-    id: "generated-id",
-        name
-:
-    "Jane Doe",
-        email
-:
-    "jane.doe@example.com",
-        locale
-:
-    "en-US",
-        role
-:
-    "clinician",
-        status
-:
-    "pending",
-        createdAt
-:
-    "2026-05-08T10:00:00.000Z"
-}
-```
-
-#### Error Cases
-
-The service can throw an `ApiError` for duplicate email addresses.
-
-```ts
-{
-    code: "DUPLICATE_EMAIL",
-        message
-:
-    "An invitation with this email already exists.",
-        statusCode
-:
-    409,
-        context
-:
-    {
-        email: "jane.doe@example.com"
-    }
-}
-```
-
-The mutation hook maps service errors into its `error` state while preserving the submitted input.
-
-### `guardInvitationManagementAccess`
-
-Guards the invitation management view based on the current demo role.
-
-```ts
-type UserRole = "admin" | "viewer";
-
-type InvitationManagementAccessResult =
-    | { ok: true }
-    | {
-    ok: false;
-    error: {
-        code: "FORBIDDEN";
-        message: string;
-    };
-};
-
-const guardInvitationManagementAccess: (
-    role: UserRole,
-) => InvitationManagementAccessResult;
-```
-
-#### Example Success Response
-
-```ts
-{
-    ok: true
-}
-```
-
-#### Example Error Response
-
-```ts
-{
-    ok: false,
-        error
-:
-    {
-        code: "FORBIDDEN",
-            message
-    :
-        "Only admins can manage invitations."
-    }
-}
-```
-
-## Validation Behavior
-
-The create invitation form validates:
+Create validation checks:
 
 - Name is required
 - Email is required
@@ -371,51 +391,157 @@ The create invitation form validates:
 - Locale is required
 - Role must be valid
 
-Duplicate email validation is handled by the service layer and displayed as request failure feedback in the UI.
+Update validation checks the same fields and also validates status.
 
-## Assumptions
+Duplicate email validation is handled by the service layer because it depends on existing invitation data.
 
-- A real backend is not included.
-- Invitation data can be stored in memory for the purpose of demonstrating behavior.
-- Authentication can be mocked or simplified.
-- New invitations are created with `pending` status.
-- `id`, `createdAt`, and `status` are generated by the service layer rather than submitted by the user.
-- The UI does not need to be production-polished, but it should clearly show the required behavior.
+## Testing
+
+The project uses both unit tests and end-to-end tests.
+
+### Unit Tests
+
+Unit tests are written with Vitest.
+
+Covered areas:
+
+- Create invitation validation
+- Update invitation validation
+- Creating invitations through the service layer
+- Email normalization
+- Duplicate email errors
+- Updating invitations
+- Preventing update conflicts when another invitation already uses the email
+- Missing invitation errors
+- Deleting invitations
+
+Unit tests live next to the code they validate:
+
+```text
+src/api/invitationService.test.ts
+src/features/invitations/invitationManagement.shared.test.ts
+```
+
+### End-to-End Tests
+
+End-to-end tests are written with Playwright.
+
+Covered flows:
+
+- Admin can create, edit, and delete an invitation
+- Delete requires confirmation
+- Viewer can read invitations
+- Viewer cannot see create, edit, or delete actions
+
+The tests use user-facing accessible selectors and scoped assertions. For example, table data is asserted within the
+`Invitations` table, and dialog fields are asserted inside the active dialog. This keeps the tests closer to user
+behavior and avoids brittle implementation selectors.
+
+E2E tests live in:
+
+```text
+e2e/invitation-management.spec.ts
+```
+
+## Key Technical Decisions
+
+### Typed Service Boundary
+
+The UI does not directly own data operations. Fetching, creating, updating, and deleting invitations are handled through
+a typed service layer.
+
+The alternative would be to keep data manipulation inside components or hooks. That would be simpler at first, but
+harder to replace with a real API later.
+
+### Explicit Mutation State
+
+Each mutation flow has an explicit lifecycle state.
+
+The alternative would be separate booleans such as `isLoading`, `error`, and `success`. That can create invalid
+combinations. A discriminated union keeps the state model safer and easier to understand.
+
+### Feature-Specific Status Badge
+
+`StatusBadge` is kept inside the invitations feature instead of the generic UI layer.
+
+The reason is that it understands invitation statuses and invitation-specific badge tones. It is not a generic badge
+primitive.
+
+### Semantic Data Grid
+
+The table is implemented with semantic HTML because the data is tabular.
+
+A div-based grid can offer layout flexibility, but a native table is more appropriate here for accessibility and data
+relationships.
+
+### Read-Only Viewer Experience
+
+Viewer access is read-only instead of fully blocked.
+
+In many real products, viewing data and mutating data are separate permissions. This makes the demo behavior closer to a
+realistic admin interface.
+
+### Separate Create, Update, and Delete Hooks
+
+Create, update, and delete each have their own mutation hook.
+
+The flows are similar, but not identical:
+
+- Create owns new form data and returns a new invitation.
+- Update owns pre-filled form data and returns an updated invitation.
+- Delete owns a destructive confirmation flow and returns the deleted invitation id.
+
+A generic mutation abstraction could be introduced later if the repetition grew, but explicit hooks are easier to read
+at this size.
 
 ## Tradeoffs
 
-- I used an in-memory mocked data source instead of a real API to keep the implementation focused.
-- I wrote a custom mutation hook instead of using a library such as TanStack Query because I wanted to show the async
-  mutation flow explicitly.
-- I kept role-based access simple instead of implementing login, sessions, or tokens.
-- I kept validation lightweight and local to the form/service layer.
-- I focused on structure, correctness, accessibility, and maintainability rather than extensive styling or framework
-  complexity.
+- The data source is in memory and resets on refresh.
+- Authentication is simplified to a demo role switcher.
+- Authorization is represented in the UI, but real authorization would belong on the backend.
+- Filtering, searching, and pagination are handled client-side.
+- Validation is intentionally lightweight.
+- The dialog shell does not implement a full focus trap.
+- There is no caching or retry strategy beyond the mocked request lifecycle.
+- No optimistic update strategy is implemented.
 
-## Known Limitations
+## Production Improvements
 
-- Data is not persisted after page refresh.
-- There is no real authentication or authorization backend.
-- Automated tests are not included yet.
-- Validation is intentionally basic.
-- There is no caching, retry logic, or advanced request cancellation.
-- The mocked API only covers the operations currently implemented in the demo.
+If this were moved toward production, the next improvements would be:
 
-## What I Would Improve Next
+- Replace the mocked service internals with real API calls
+- Enforce authorization on the backend
+- Move filtering, sorting, and pagination to the backend for larger datasets
+- Add schema-based validation shared between UI and API boundaries
+- Add stronger email and locale validation
+- Add request cancellation for list loading
+- Add caching and invalidation with a server-state library such as TanStack Query
+- Add optimistic updates where appropriate
+- Add a focus trap and stronger keyboard handling to the dialog
+- Add monitoring and structured error reporting
+- Expand test coverage around UI edge cases and accessibility behavior
 
-With more time, I would consider adding:
+## Quality Checklist
 
-- Edit invitation flow
-- Delete invitation flow with confirmation
-- Read-only viewer behavior
-- Unit tests for the mutation hook, service layer, validation, and list state logic
-- End-to-end tests for admin and viewer flows
-- More robust email and locale validation
-- Real API integration
-- Better error mapping between backend errors and UI messages
-- Request cancellation for list loading
-- Caching and retry behavior with TanStack Query
-- Optimistic updates where appropriate
-- More complete accessibility testing
-- More complete role and permission modelling
-- Persisted data using a lightweight local API or backend
+Before pushing changes, run:
+
+```bash
+npm run lint
+npm run build
+npm run test:unit
+npm run test:e2e
+```
+
+## Summary
+
+This project demonstrates a compact but complete frontend feature with clear boundaries:
+
+- Typed domain modelling
+- Service-layer data operations
+- Explicit async mutation state
+- Role-aware UI behavior
+- Semantic and accessible table structure
+- Reusable UI primitives
+- Feature-specific components where appropriate
+- Unit and E2E test coverage
+- Clear tradeoffs and production growth paths
