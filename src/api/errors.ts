@@ -1,5 +1,6 @@
 export type ErrorCode =
   | "DUPLICATE_EMAIL"
+  | "INVITATION_NOT_FOUND"
   | "NETWORK_ERROR"
   | "VALIDATION_ERROR"
   | "FORBIDDEN"

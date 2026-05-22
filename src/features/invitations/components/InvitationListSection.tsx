@@ -4,29 +4,42 @@ import type {
   Invitation,
   InvitationListSectionProps,
 } from "@/features/invitations/invitationManagement.shared";
+import { DeleteInvitationDialog } from "@/features/invitations/components/DeleteInvitationDialog";
+import { EditInvitationDialog } from "@/features/invitations/components/EditInvitationDialog";
 import { InvitationFilters } from "@/features/invitations/components/InvitationFilters";
 import { InvitationPagination } from "@/features/invitations/components/InvitationPagination";
 import { InvitationsTable } from "@/features/invitations/components/InvitationsTable";
+
+type InvitationDialogState =
+  | {
+      type: "edit";
+      invitation: Invitation;
+    }
+  | {
+      type: "delete";
+      invitation: Invitation;
+    }
+  | null;
 
 export const InvitationListSection = ({
   invitationList,
   canManageInvitations,
 }: InvitationListSectionProps) => {
-  const [invitationToEdit, setInvitationToEdit] = useState<Invitation | null>(
-    null,
-  );
-  const [invitationToDelete, setInvitationToDelete] =
-    useState<Invitation | null>(null);
+  const [activeDialog, setActiveDialog] = useState<InvitationDialogState>(null);
 
   const hasLoadedSuccessfully =
     !invitationList.isLoading && !invitationList.errorMessage;
 
   const handleEditInvitation = (invitation: Invitation): void => {
-    setInvitationToEdit(invitation);
+    setActiveDialog({ type: "edit", invitation });
   };
 
   const handleDeleteInvitation = (invitation: Invitation): void => {
-    setInvitationToDelete(invitation);
+    setActiveDialog({ type: "delete", invitation });
+  };
+
+  const handleCloseDialog = (): void => {
+    setActiveDialog(null);
   };
 
   return (
@@ -74,30 +87,20 @@ export const InvitationListSection = ({
         onNextPage={invitationList.goToNextPage}
       />
 
-      {invitationToEdit ? (
-        <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          Edit UI placeholder for {invitationToEdit.name}
-          <button
-            type="button"
-            className="ml-3 font-semibold underline"
-            onClick={() => setInvitationToEdit(null)}
-          >
-            Close
-          </button>
-        </div>
+      {activeDialog?.type === "edit" ? (
+        <EditInvitationDialog
+          invitation={activeDialog.invitation}
+          onInvitationUpdated={invitationList.updateInvitationInList}
+          onClose={handleCloseDialog}
+        />
       ) : null}
 
-      {invitationToDelete ? (
-        <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-          Delete confirmation placeholder for {invitationToDelete.name}
-          <button
-            type="button"
-            className="ml-3 font-semibold underline"
-            onClick={() => setInvitationToDelete(null)}
-          >
-            Cancel
-          </button>
-        </div>
+      {activeDialog?.type === "delete" ? (
+        <DeleteInvitationDialog
+          invitation={activeDialog.invitation}
+          onInvitationDeleted={invitationList.removeInvitation}
+          onClose={handleCloseDialog}
+        />
       ) : null}
     </Card>
   );

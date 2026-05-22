@@ -1,8 +1,14 @@
-import { DataGrid, type DataGridColumn, DeleteIcon, EditIcon, IconButton } from "@/components/ui";
+import {
+  DataGrid,
+  type DataGridColumn,
+  DeleteIcon,
+  EditIcon,
+  IconButton,
+} from "@/components/ui";
 import {
   formatCreatedDate,
   type Invitation,
-  type InvitationsTableProps
+  type InvitationsTableProps,
 } from "@/features/invitations/invitationManagement.shared";
 
 import { StatusBadge } from "@/components/ui/StatusBadge";

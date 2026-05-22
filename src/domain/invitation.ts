@@ -10,9 +10,18 @@ export type Invitation = {
   status: InvitationStatus;
   createdAt: string;
 };
+
 export type CreateInvitationInput = {
   name: string;
   email: string;
   locale: string;
   role: InvitationRole;
+};
+
+export type UpdateInvitationInput = {
+  name: string;
+  email: string;
+  locale: string;
+  role: InvitationRole;
+  status: InvitationStatus;
 };

@@ -9,5 +9,6 @@ export { TextField } from "./TextField";
 export { EditIcon } from "./EditIcon";
 export { DeleteIcon } from "./DeleteIcon";
 export { IconButton } from "./IconButton";
+export { Dialog } from "./Dialog";
 
 export type { BadgeTone, DataGridColumn, SelectOption } from "./ui.shared";

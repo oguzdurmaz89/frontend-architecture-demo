@@ -3,6 +3,7 @@ import type {
   Invitation,
   InvitationRole,
   InvitationStatus,
+  UpdateInvitationInput,
 } from "@/domain/invitation";
 
 import type { BadgeTone, SelectOption } from "@/components/ui";
@@ -17,6 +18,7 @@ export type {
   Invitation,
   InvitationRole,
   InvitationStatus,
+  UpdateInvitationInput,
   StatusFilter,
 };
 
@@ -26,42 +28,49 @@ export const INVITATION_ROLES: InvitationRole[] = [
   "coordinator",
 ];
 
-export const ROLE_SELECT_OPTIONS: SelectOption<InvitationRole>[] = [
-  {
-    label: "Admin",
-    value: "admin",
-  },
-  {
-    label: "Clinician",
-    value: "clinician",
-  },
-  {
-    label: "Coordinator",
-    value: "coordinator",
-  },
+export const INVITATION_STATUSES: InvitationStatus[] = [
+  "pending",
+  "accepted",
+  "expired",
+  "revoked",
 ];
+
+const ROLE_LABELS: Record<InvitationRole, string> = {
+  admin: "Admin",
+  clinician: "Clinician",
+  coordinator: "Coordinator",
+};
+
+const STATUS_LABELS: Record<InvitationStatus, string> = {
+  pending: "Pending",
+  accepted: "Accepted",
+  expired: "Expired",
+  revoked: "Revoked",
+};
+
+export const ROLE_SELECT_OPTIONS: SelectOption<InvitationRole>[] =
+  INVITATION_ROLES.map((role) => ({
+    label: ROLE_LABELS[role],
+    value: role,
+  }));
+
+export const STATUS_SELECT_OPTIONS: SelectOption<InvitationStatus>[] =
+  INVITATION_STATUSES.map((status) => ({
+    label: STATUS_LABELS[status],
+    value: status,
+  }));
 
 export const STATUS_FILTER_SELECT_OPTIONS: SelectOption<StatusFilter>[] = [
   {
     label: "All statuses",
     value: "all",
   },
-  {
-    label: "Pending",
-    value: "pending",
-  },
-  {
-    label: "Accepted",
-    value: "accepted",
-  },
-  {
-    label: "Expired",
-    value: "expired",
-  },
-  {
-    label: "Revoked",
-    value: "revoked",
-  },
+  ...INVITATION_STATUSES.map((status): SelectOption<StatusFilter> => {
+    return {
+      label: STATUS_LABELS[status],
+      value: status,
+    };
+  }),
 ];
 
 export const INITIAL_FORM_VALUES: CreateInvitationInput = {
@@ -78,7 +87,17 @@ export const STATUS_BADGE_TONES: Record<InvitationStatus, BadgeTone> = {
   revoked: "danger",
 };
 
-export type FormErrors = Partial<Record<keyof CreateInvitationInput, string>>;
+type InvitationDetailsInput = Pick<
+  UpdateInvitationInput,
+  "name" | "email" | "locale" | "role"
+>;
+
+type InvitationFormErrors<TInput> = Partial<Record<keyof TInput, string>>;
+
+export type FormErrors = InvitationFormErrors<CreateInvitationInput>;
+
+export type UpdateInvitationFormErrors =
+  InvitationFormErrors<UpdateInvitationInput>;
 
 export type InvitationListState = ReturnType<typeof useInvitationList>;
 
@@ -117,10 +136,10 @@ export type InvitationPaginationProps = {
   onNextPage: () => void;
 };
 
-export const validateCreateInvitationInput = (
-  input: CreateInvitationInput,
-): FormErrors => {
-  const errors: FormErrors = {};
+const validateInvitationDetails = (
+  input: InvitationDetailsInput,
+): InvitationFormErrors<InvitationDetailsInput> => {
+  const errors: InvitationFormErrors<InvitationDetailsInput> = {};
 
   if (input.name.trim().length === 0) {
     errors.name = "Name is required.";
@@ -138,6 +157,26 @@ export const validateCreateInvitationInput = (
 
   if (!INVITATION_ROLES.includes(input.role)) {
     errors.role = "Choose a valid role.";
+  }
+
+  return errors;
+};
+
+export const validateCreateInvitationInput = (
+  input: CreateInvitationInput,
+): FormErrors => {
+  return validateInvitationDetails(input);
+};
+
+export const validateUpdateInvitationInput = (
+  input: UpdateInvitationInput,
+): UpdateInvitationFormErrors => {
+  const errors: UpdateInvitationFormErrors = {
+    ...validateInvitationDetails(input),
+  };
+
+  if (!INVITATION_STATUSES.includes(input.status)) {
+    errors.status = "Choose a valid status.";
   }
 
   return errors;

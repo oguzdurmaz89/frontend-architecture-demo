@@ -72,6 +72,20 @@ export const useInvitationList = () => {
     setCurrentPage(1);
   };
 
+  const updateInvitationInList = (updatedInvitation: Invitation): void => {
+    setInvitations((currentInvitations) =>
+      currentInvitations.map((invitation) =>
+        invitation.id === updatedInvitation.id ? updatedInvitation : invitation,
+      ),
+    );
+  };
+
+  const removeInvitation = (invitationId: string): void => {
+    setInvitations((currentInvitations) =>
+      currentInvitations.filter((invitation) => invitation.id !== invitationId),
+    );
+  };
+
   const goToPreviousPage = (): void => {
     setCurrentPage((page) => Math.max(1, page - 1));
   };
@@ -128,5 +142,7 @@ export const useInvitationList = () => {
     goToNextPage,
     refresh,
     addInvitation,
+    updateInvitationInList,
+    removeInvitation,
   };
 };
