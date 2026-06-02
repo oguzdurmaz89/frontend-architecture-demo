@@ -1,4 +1,4 @@
-# Frontend Architecture Demo
+# InviteFlow Frontend Architecture
 
 A compact React + TypeScript admin application for managing user access invitations.
 
